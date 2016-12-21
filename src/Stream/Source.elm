@@ -72,7 +72,7 @@ singleton a =
 
 naturalNumbers : Source Int
 naturalNumbers =
-    Source 0 ((+) 1)
+    Source 1 ((+) 1)
 
 
 fibonocci : Source ( Int, Int )
