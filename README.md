@@ -1,3 +1,6 @@
+
+Elm package: http://package.elm-lang.org/packages/naddeoa/stream/latest
+
 A `Stream` is kind of like a stream in Java 8 and kind of like a lazy list. It is a
 potentially infinite stream of items that can be transformed and collected back into
 other structures.
