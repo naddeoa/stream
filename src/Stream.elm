@@ -157,13 +157,19 @@ filter predicate stream =
 
 
 {-| Reduce a stream such that all values that come out of it are accumulations.
+This is weird, but I like it. If you call `next` on a reduced stream then you'll
+get the next accumulation. If you call `toList` then you'll get a list of accumulations.
+In the following example, the first item is `1` because `0 + 1 = 1`. The second item
+is `3` because the last accumulation was `1` and the next value in the natural number
+seqauence is `2`, so `2 + 1 = 3`, etc.
 
-    -- [ 2, 4, 6, 8 ]
-    evenNumbers =
+    -- [ 1, 3, 6, 10, 15, 21, 28, 36, 45, 55 ]
+    reduced =
         Stream.naturalNumbers
             |> Stream.limit 10
-            |> Stream.reduce (+)
+            |> Stream.reduce (+) 0
             |> Stream.toList
+
 -}
 reduce : (b -> b -> b) -> b -> Stream a b -> Stream a b
 reduce reducer seed stream =

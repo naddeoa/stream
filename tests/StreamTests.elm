@@ -1,4 +1,4 @@
-module Tests exposing (..)
+module StreamTests exposing (..)
 
 import Test exposing (..)
 import Expect
