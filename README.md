@@ -45,7 +45,7 @@ stream reuse. Things like the following are possible now.
                 |> Stream.map toString
                 |> Stream.toList
 
-This is obvious to anyone who feeld comfortable with functional programming, but if
+This is obvious to anyone who feels comfortable with functional programming, but if
 you're coming from Java 8 then you're aware that you can't reuse streams
 that have been collected.
 
