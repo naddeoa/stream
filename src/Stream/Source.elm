@@ -46,7 +46,7 @@ source that will return the next value after.
 -}
 next : Source a -> ( Source a, a )
 next source =
-    ( nextSource source, peek source )
+    ( nextSource source, current source )
 
 
 {-| Like `next` but it returns a list of `n` items instead.
@@ -58,15 +58,15 @@ next source =
 -}
 nextN : Int -> Source a -> ( Source a, List a )
 nextN n source =
-    takenHelper n source []
+    nextNHelper n source []
 
 
-takenHelper : Int -> Source a -> List a -> ( Source a, List a )
-takenHelper n source acc =
+nextNHelper : Int -> Source a -> List a -> ( Source a, List a )
+nextNHelper n source acc =
     if n <= 0 then
         ( source, List.reverse acc )
     else
-        takenHelper (n - 1) (nextSource source) ((peek source) :: acc)
+        nextNHelper (n - 1) (nextSource source) ((current source) :: acc)
 
 
 {-| Get the next value from a source without the next `Source` state.

@@ -162,7 +162,7 @@ filter predicate stream =
     evenNumbers =
         Stream.naturalNumbers
             |> Stream.limit 10
-            |> Stream.filter (\n -> n % 2 == 0)
+            |> Stream.reduce (+)
             |> Stream.toList
 -}
 reduce : (b -> b -> b) -> b -> Stream a b -> Stream a b
@@ -212,12 +212,12 @@ next stream =
             in
                 case nextValue of
                     Nothing ->
-                        ( LimitedStream 0 baseStream, Nothing )
+                        ( Empty, Nothing )
 
                     Just b ->
                         case n <= 0 of
                             True ->
-                                ( LimitedStream 0 baseStream, Nothing )
+                                ( Empty, Nothing )
 
                             False ->
                                 ( LimitedStream (n - 1) nextStream, Just b )
@@ -225,7 +225,7 @@ next stream =
         ListStream list ->
             case List.head list of
                 Nothing ->
-                    ( ListStream list, Nothing )
+                    ( Empty, Nothing )
 
                 Just b ->
                     ( ListStream <| Maybe.withDefault [] (List.tail list), Just b )
@@ -237,7 +237,7 @@ next stream =
             in
                 case nextValue of
                     Nothing ->
-                        ( FilteredStream predicate baseStream, Nothing )
+                        ( Empty, Nothing )
 
                     Just b ->
                         let
@@ -256,7 +256,7 @@ next stream =
             in
                 case nextValue of
                     Nothing ->
-                        ( ReducedStream reducer seed baseStream, Nothing )
+                        ( Empty, Nothing )
 
                     Just b ->
                         let

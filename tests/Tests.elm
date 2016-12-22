@@ -30,7 +30,7 @@ all =
                             |> Stream.toList
 
                     expected =
-                        (List.range 0 99)
+                        (List.range 1 100)
                 in
                     Expect.equalLists expected actual
         , test "double numbers with map" <|
@@ -43,10 +43,9 @@ all =
                             |> Stream.toList
 
                     expected =
-                        List.map (\n -> n * 2) <| List.range 0 99
+                        List.map (\n -> n * 2) <| List.range 1 100
                 in
                     Expect.equalLists expected actual
-
         , test "toList" <|
             \() ->
                 let
@@ -56,7 +55,19 @@ all =
                     actual =
                         Stream.fromList expected
                             |> Stream.toList
+                in
+                    Expect.equalLists expected actual
+        , test "reduce" <|
+            \() ->
+                let
+                    expected =
+                        [ 1, 3, 6, 10, 15, 21, 28, 36, 45, 55 ]
 
+                    actual =
+                        Stream.naturalNumbers
+                            |> Stream.limit 10
+                            |> Stream.reduce (+) 0
+                            |> Stream.toList
                 in
                     Expect.equalLists expected actual
         ]

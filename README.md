@@ -1,119 +1,48 @@
-This project was bootstrapped with [Create Elm App](https://github.com/halfzebra/create-elm-app).
+A `Stream` is kind of like a stream in Java 8 and kind of like a lazy list. It is a
+potentially infinite stream of items that can be transformed and collected back into
+other structures.
 
-Below you will find some information on how to perform common tasks.  
-You can find the most recent version of this guide [here](https://github.com/halfzebra/create-elm-app/blob/master/template/README.md).
+This library was made because Elm currently doesn't have great options for
+lazyiness. There are a few implementations that exist but they are vulnerable
+to stack overflows. This library uses tail call recursion for collecting
+streams into lists. Also, instead of modeling the streams recursively it uses
+an approach closer to the Elm architecture. The `Lazy` core library is not
+used. The deepest stack you will have is equal to the amount of transformations
+you apply on a stream.  For example, in the following snippet:
 
-## Table of Contents
-- [Sending feedback](#sending-feedback)
-- [Folder structure](#folder-structure)
-- [Installing Elm packages](#installing-elm-packages)
-- [Installing JavaScript packages](#installing-js-packages)
-- [Available scripts](#available-scripts)
-  - [elm-app build](#elm-app-build)
-  - [elm-app start](#elm-app-start)
-  - [elm-app test](#elm-app-test)
-  - [elm-app eject](#elm-app-eject)
-  - [elm-app <elm-platform-comand>](#elm-app-elm-platform-comand)
-    - [package](#package)
-    - [repl](#repl)
-    - [make](#make)
-    - [reactor](#reactor)
-- [IDE setup for Hot Module Replacement](#ide-setup-for-hot-module-replacement)
+    let
+        finalStream =
+            Stream.fibonocci
+                |> Stream.limit 100
+                |> Stream.filter isEven
+                |> Stream.map toString
 
-## Sending feedback
-You are very velcome with any [feedback](https://github.com/halfzebra/create-elm-app/issues)
+Every time `next` is called on `finalStream` a stack of size three is generated
+before a value can be returned. It scales with the number of transforms, not
+the size of the list. You would have to apply a high enough number of
+transforms to a stream in order to get a stack overflow. That number is
+high enough that you won't have to worry about it. That said, in other
+libraries when you attempt to turn an infinite stream into a list you get a
+stack overflow. In this library, it will just run forever, so, keep that in
+mind.
 
-## Installing Elm packages
+One useful difference from Java 8 streams that we get just for being functional is
+stream reuse. Things like the following are possible now.
 
-```sh
-elm-app package install <package-name>
-```
+    let
+        baseStream =
+            Stream.naturalNumbers
+                |> Stream.limit 10
 
-## Installing JavaScript packages
+        firstList =
+            Stream.toList baseStream
 
-To use JavaScript packages from npm, you'll need to add a `package.json`, install the dependencies and you're ready to go.
+        list =
+            baseStream
+                |> Stream.map toString
+                |> Stream.toList
 
-```sh
-npm init -y # Add package.json
-npm install --save-dev pouchdb-browser # Install library from npm
-```
+This is obvious to anyone who feeld comfortable with functional programming, but if
+you're coming from Java 8 then you're aware that you can't reuse streams
+that have been collected.
 
-```js
-// Use in your JS code
-var PouchDB = require('pouchdb-browser');
-var db = new PouchDB('mydb');
-```
-
-## Folder structure
-```
-my-app/
-  .gitignore
-  README.md
-  elm-package.json
-  src/
-    favicon.ico
-    index.html
-    index.js
-    main.css
-    Main.elm
-  tests/
-    elm-package.json
-    Main.elm
-    Tests.elm
-```
-For the project to build, these files must exist with exact filenames:
-
-- `src/index.html` is the page template;
-- `src/favicon.ico` is the icon you see in the browser tab;
-- `src/index.js` is the JavaScript entry point.
-
-You can delete or rename the other files.
-
-You may create subdirectories inside src.
-
-## Available scripts
-In the project directory you can run:
-### `elm-app build`
-Builds the app for production to the `dist` folder.  
-
-The build is minified and the filenames include the hashes.  
-Your app is ready to be deployed!
-
-### `elm-app start`
-Runs the app in the development mode.  
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
-
-The page will reload if you make edits.  
-You will also see any lint errors in the console.
-
-### `elm-app test`
-Run tests with [node-test-runner](https://github.com/rtfeldman/node-test-runner/tree/master)
-
-### `elm-app eject`
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
-
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time.
-
-Instead, it will copy all the configuration files and the transitive dependencies (Webpack, Elm Platform, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
-
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
-
-### `elm-app <elm-platform-comand>`
-Create Elm App does not rely on global installation of Elm Platform, but you still can use it's local Elm Platform to access default command line tools:
-
-#### `package`
-Alias for [elm-package](http://guide.elm-lang.org/get_started.html#elm-package)
-
-Use it for installing Elm packages from [package.elm-lang.org](http://package.elm-lang.org/)
-
-#### `repl`
-Alias for [elm-repl](http://guide.elm-lang.org/get_started.html#elm-repl)
-
-#### `make`
-Alias for  [elm-make](http://guide.elm-lang.org/get_started.html#elm-make)
-
-#### `reactor`
-Alias for  [elm-reactor](http://guide.elm-lang.org/get_started.html#elm-reactor)
-
-## IDE setup for Hot Module Replacement
-Remember to disable [safe write](https://webpack.github.io/docs/webpack-dev-server.html#working-with-editors-ides-supporting-safe-write) if you are using VIM or IntelliJ IDE, such as WebStrom.
