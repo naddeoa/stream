@@ -15,6 +15,7 @@ module Stream
         , naturalNumbers
         , empty
         , value
+        , range
         , singleton
         , isEmpty
         )
@@ -77,7 +78,7 @@ that have been collected.
 @docs next, nextN, toList
 
 # Creating streams
-@docs fromList, value, singleton
+@docs fromList, value, singleton, range
 
 # Special streams
 @docs fibonocci, naturalNumbers, empty
@@ -433,6 +434,21 @@ fromList list =
 value : b -> Stream a b
 value b =
     Stream (Source.value b)
+
+
+{-| Create a stream from `start` to `stop` with a step of `step`. The
+stream will always include the start. If the stop value is less than the
+start then the start value is used in its place.
+
+    -- [ 1, 3, 5, 7, 9, 11 ]
+    actual =
+        Stream.range 1 11 2
+            |> Stream.toList
+-}
+range : Int -> Int -> Int -> Stream a Int
+range start stop step =
+    Stream (Source.iterate start ((+) step))
+        |> takeWhile (\n -> n <= (Basics.max start stop))
 
 
 {-| Create a stream of size 1 that contains a single value.

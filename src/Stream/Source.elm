@@ -6,6 +6,7 @@ module Stream.Source
         , peek
         , current
         , value
+        , iterate
         , naturalNumbers
         , fibonocci
         )
@@ -20,6 +21,9 @@ This module exists mostly to support infinite streams in the `Stream` module.
 
 # Special sources
 @docs value, naturalNumbers, fibonocci
+
+# Creating sources
+@docs iterate
 -}
 
 
@@ -118,6 +122,13 @@ nextSource (Source a next) =
 value : a -> Source a
 value a =
     Source a (\a -> a)
+
+
+{-| A `Source` that iterates a function over a seed value
+-}
+iterate : a -> (a -> a) -> Source a
+iterate a fn =
+    Source a fn
 
 
 {-| A source of natural numbers from 1 to infinity.

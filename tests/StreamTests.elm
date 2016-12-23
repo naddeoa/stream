@@ -173,4 +173,59 @@ all =
                         Stream.isEmpty Stream.naturalNumbers
                 in
                     Expect.equal expected actual
+        , test "basic range" <|
+            \() ->
+                let
+                    expected =
+                        List.range 1 10
+
+                    actual =
+                        Stream.range 1 10 1
+                            |> Stream.toList
+                in
+                    Expect.equalLists expected actual
+        , test "range with a 2 step" <|
+            \() ->
+                let
+                    expected =
+                        [ 1, 3, 5, 7, 9, 11 ]
+
+                    actual =
+                        Stream.range 1 11 2
+                            |> Stream.toList
+                in
+                    Expect.equalLists expected actual
+        , test "range with a 100 step past the stopping point" <|
+            \() ->
+                let
+                    expected =
+                        [ 1 ]
+
+                    actual =
+                        Stream.range 1 50 100
+                            |> Stream.toList
+                in
+                    Expect.equalLists expected actual
+        , test "start and stop are equal" <|
+            \() ->
+                let
+                    expected =
+                        [ 1 ]
+
+                    actual =
+                        Stream.range 1 1 1
+                            |> Stream.toList
+                in
+                    Expect.equalLists expected actual
+        , test "stop is less than start" <|
+            \() ->
+                let
+                    expected =
+                        [ 10 ]
+
+                    actual =
+                        Stream.range 10 1  1
+                            |> Stream.toList
+                in
+                    Expect.equalLists expected actual
         ]
