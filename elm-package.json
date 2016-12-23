@@ -1,5 +1,5 @@
 {
-    "version": "1.1.1",
+    "version": "1.2.0",
     "summary": "Functional, infinite streams of data that won't overflow the stack",
     "repository": "https://github.com/naddeoa/stream.git",
     "license": "BSD3",
@@ -7,7 +7,10 @@
         ".",
         "src/"
     ],
-    "exposed-modules": ["Stream", "Stream.Source"],
+    "exposed-modules": [
+        "Stream",
+        "Stream.Source"
+    ],
     "dependencies": {
         "elm-lang/core": "5.0.0 <= v < 6.0.0"
     },

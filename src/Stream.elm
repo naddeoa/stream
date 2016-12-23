@@ -3,6 +3,7 @@ module Stream
         ( Stream
         , filter
         , takeWhile
+        , dropWhile
         , fromList
         , limit
         , map
@@ -67,7 +68,7 @@ that have been collected.
 @docs Stream
 
 # Operations on streams
-@docs limit, map, reduce, filter, takeWhile
+@docs limit, map, reduce, filter, takeWhile, dropWhile
 
 # Getting things out of streams
 @docs next, nextN, toList
@@ -94,7 +95,8 @@ type Stream a b
     | LimitedStream Int (Stream a b)
     | ListStream (List b)
     | FilteredStream (b -> Bool) (Stream a b)
-    | WhileStream (b -> Bool) (Stream a b)
+    | TakeWhileStream (b -> Bool) (Stream a b)
+    | DropWhileStream (b -> Bool) (Stream a b)
     | ReducedStream (b -> b -> b) b (Stream a b)
     | Empty
 
@@ -167,7 +169,21 @@ filter predicate stream =
 -}
 takeWhile : (b -> Bool) -> Stream a b -> Stream a b
 takeWhile predicate stream =
-    WhileStream predicate stream
+    TakeWhileStream predicate stream
+
+
+{-| Drop items from a stream until a predicate is satisfied.
+
+    -- [ 100, 101, 102, 103, 104, 105, 106, 107, 108, 109 ]
+    from100To109=
+        Stream.naturalNumbers
+            |> Stream.dropWhile (\n -> n < 100)
+            |> Stream.limit 10
+            |> Stream.toList
+-}
+dropWhile : (b -> Bool) -> Stream a b -> Stream a b
+dropWhile predicate stream =
+    DropWhileStream predicate stream
 
 
 {-| Reduce a stream such that all values that come out of it are accumulations.
@@ -265,7 +281,7 @@ next stream =
                             else
                                 next nextFilter
 
-        WhileStream predicate baseStream ->
+        TakeWhileStream predicate baseStream ->
             let
                 ( nextStream, nextValue ) =
                     next baseStream
@@ -276,9 +292,24 @@ next stream =
 
                     Just b ->
                         if predicate b then
-                            ( WhileStream predicate nextStream, Just b )
+                            ( TakeWhileStream predicate nextStream, Just b )
                         else
                             ( Empty, Nothing )
+
+        DropWhileStream predicate baseStream ->
+            let
+                ( nextStream, nextValue ) =
+                    next baseStream
+            in
+                case nextValue of
+                    Nothing ->
+                        ( Empty, Nothing )
+
+                    Just b ->
+                        if predicate b then
+                            next <| DropWhileStream predicate nextStream
+                        else
+                            ( DropWhileStream predicate nextStream, Just b )
 
         ReducedStream reducer seed baseStream ->
             let

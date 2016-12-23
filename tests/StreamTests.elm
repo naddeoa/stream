@@ -117,4 +117,17 @@ all =
                             |> Stream.toList
                 in
                     Expect.equalLists expected actual
+        , test "dropWhile" <|
+            \() ->
+                let
+                    expected =
+                        List.range 100 109
+
+                    actual =
+                        Stream.naturalNumbers
+                            |> Stream.dropWhile (\n -> n < 100)
+                            |> Stream.limit 10
+                            |> Stream.toList
+                in
+                    Expect.equalLists expected actual
         ]
