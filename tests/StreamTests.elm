@@ -57,15 +57,50 @@ all =
                             |> Stream.toList
                 in
                     Expect.equalLists expected actual
+        , test "nextN" <|
+            \() ->
+                let
+                    expected =
+                        [ 1, 2, 3, 4, 5 ]
+
+                    ( _, actual ) =
+                        Stream.naturalNumbers
+                            |> Stream.nextN 5
+                in
+                    Expect.equalLists expected actual
+        , test "nextN on a reduced stream" <|
+            \() ->
+                let
+                    expected =
+                        [ 15 ]
+
+                    ( _, actual ) =
+                        Stream.naturalNumbers
+                            |> Stream.reduce (+) 0
+                            |> Stream.nextN 5
+                in
+                    Expect.equalLists expected actual
         , test "reduce" <|
             \() ->
                 let
                     expected =
-                        [ 1, 3, 6, 10, 15, 21, 28, 36, 45, 55 ]
+                        [ 55 ]
 
                     actual =
                         Stream.naturalNumbers
                             |> Stream.limit 10
+                            |> Stream.reduce (+) 0
+                            |> Stream.toList
+                in
+                    Expect.equalLists expected actual
+        , test "reduce an empty stream" <|
+            \() ->
+                let
+                    expected =
+                        [ 0 ]
+
+                    actual =
+                        Stream.empty
                             |> Stream.reduce (+) 0
                             |> Stream.toList
                 in
