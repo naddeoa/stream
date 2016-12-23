@@ -14,6 +14,9 @@ module Stream
         , fibonocci
         , naturalNumbers
         , empty
+        , value
+        , singleton
+        , isEmpty
         )
 
 {-| A `Stream` is kind of like a stream in Java 8 and kind of like a lazy list. It is a
@@ -68,13 +71,13 @@ that have been collected.
 @docs Stream
 
 # Operations on streams
-@docs limit, map, reduce, filter, takeWhile, dropWhile
+@docs limit, map, reduce, filter, takeWhile, dropWhile, isEmpty
 
 # Getting things out of streams
 @docs next, nextN, toList
 
 # Creating streams
-@docs fromList
+@docs fromList, value, singleton
 
 # Special streams
 @docs fibonocci, naturalNumbers, empty
@@ -421,6 +424,29 @@ fromList list =
     ListStream list
 
 
+{-| Create an infinite stream that returns a single value forever.
+
+    -- [ 'a', 'a', ... ]
+    bunchOfA =
+        Stream.value 'a'
+-}
+value : b -> Stream a b
+value b =
+    Stream (Source.value b)
+
+
+{-| Create a stream of size 1 that contains a single value.
+
+    -- [ 'a' ]
+    justA =
+        Stream.singleton 'a'
+            |> Stream.toList
+-}
+singleton : b -> Stream a b
+singleton b =
+    fromList [ b ]
+
+
 
 -- Gathering streams
 
@@ -458,3 +484,17 @@ toListHelper stream acc =
 
             Just a ->
                 toListHelper nextStream (a :: acc)
+
+
+{-| Whether or not this stream is empty.
+The check is determined by whether or not the next value out of the stream
+is `Nothing`
+-}
+isEmpty : Stream a b -> Bool
+isEmpty stream =
+    case Tuple.second <| next stream of
+        Nothing ->
+            True
+
+        _ ->
+            False

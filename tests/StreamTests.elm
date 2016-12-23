@@ -130,4 +130,47 @@ all =
                             |> Stream.toList
                 in
                     Expect.equalLists expected actual
+        , test "value" <|
+            \() ->
+                let
+                    expected =
+                        [ 'a', 'a', 'a' ]
+
+                    actual =
+                        Stream.value 'a'
+                            |> Stream.limit 3
+                            |> Stream.toList
+                in
+                    Expect.equalLists expected actual
+        , test "singleton" <|
+            \() ->
+                let
+                    expected =
+                        [ 'a' ]
+
+                    actual =
+                        Stream.singleton 'a'
+                            |> Stream.toList
+                in
+                    Expect.equalLists expected actual
+        , test "isEmpty True" <|
+            \() ->
+                let
+                    expected =
+                        True
+
+                    actual =
+                        Stream.isEmpty Stream.empty
+                in
+                    Expect.equal expected actual
+        , test "isEmpty False" <|
+            \() ->
+                let
+                    expected =
+                        False
+
+                    actual =
+                        Stream.isEmpty Stream.naturalNumbers
+                in
+                    Expect.equal expected actual
         ]
