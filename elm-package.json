@@ -1,5 +1,5 @@
 {
-    "version": "1.0.1",
+    "version": "1.1.0",
     "summary": "Functional, infinite streams of data that won't overflow the stack",
     "repository": "https://github.com/naddeoa/stream.git",
     "license": "BSD3",
