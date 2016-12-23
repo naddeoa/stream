@@ -70,4 +70,16 @@ all =
                             |> Stream.toList
                 in
                     Expect.equalLists expected actual
+        , test "takeWhile" <|
+            \() ->
+                let
+                    expected =
+                        List.range 1 99
+
+                    actual =
+                        Stream.naturalNumbers
+                            |> Stream.takeWhile (\n -> n < 100)
+                            |> Stream.toList
+                in
+                    Expect.equalLists expected actual
         ]

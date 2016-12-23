@@ -2,6 +2,7 @@ module Stream
     exposing
         ( Stream
         , filter
+        , takeWhile
         , fromList
         , limit
         , map
@@ -66,7 +67,7 @@ that have been collected.
 @docs Stream
 
 # Operations on streams
-@docs limit, map, reduce, filter
+@docs limit, map, reduce, filter, takeWhile
 
 # Getting things out of streams
 @docs next, nextN, toList
@@ -93,6 +94,7 @@ type Stream a b
     | LimitedStream Int (Stream a b)
     | ListStream (List b)
     | FilteredStream (b -> Bool) (Stream a b)
+    | WhileStream (b -> Bool) (Stream a b)
     | ReducedStream (b -> b -> b) b (Stream a b)
     | Empty
 
@@ -154,6 +156,18 @@ running forever when you finally try to turn it into a list.
 filter : (b -> Bool) -> Stream a b -> Stream a b
 filter predicate stream =
     FilteredStream predicate stream
+
+
+{-| Take items from a stream while a predicate is true.
+
+    numbersUnder10 =
+        Stream.naturalNumbers
+            |> Stream.takeWhile (\n -> n < 10)
+            |> Stream.toList
+-}
+takeWhile : (b -> Bool) -> Stream a b -> Stream a b
+takeWhile predicate stream =
+    WhileStream predicate stream
 
 
 {-| Reduce a stream such that all values that come out of it are accumulations.
@@ -254,6 +268,21 @@ next stream =
                                 ( nextFilter, Just b )
                             else
                                 next nextFilter
+
+        WhileStream predicate baseStream ->
+            let
+                ( nextStream, nextValue ) =
+                    next baseStream
+            in
+                case nextValue of
+                    Nothing ->
+                        ( Empty, Nothing )
+
+                    Just b ->
+                        if predicate b then
+                            ( WhileStream predicate nextStream, Just b )
+                        else
+                            ( Empty, Nothing )
 
         ReducedStream reducer seed baseStream ->
             let
