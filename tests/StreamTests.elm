@@ -46,6 +46,19 @@ all =
                         List.map (\n -> n * 2) <| List.range 1 100
                 in
                     Expect.equalLists expected actual
+        , test "map to a different type" <|
+            \() ->
+                let
+                    actual =
+                        Stream.naturalNumbers
+                            |> Stream.limit 5
+                            |> Stream.map toString
+                            |> Stream.toList
+
+                    expected =
+                        [ "1", "2", "3", "4", "5" ]
+                in
+                    Expect.equalLists expected actual
         , test "toList" <|
             \() ->
                 let
@@ -224,7 +237,45 @@ all =
                         [ 10 ]
 
                     actual =
-                        Stream.range 10 1  1
+                        Stream.range 10 1 1
+                            |> Stream.toList
+                in
+                    Expect.equalLists expected actual
+        , test "iterate" <|
+            \() ->
+                let
+                    expected =
+                        [ "a", "aa", "aaa", "aaaa", "aaaaa" ]
+
+                    actual =
+                        Stream.iterate "a" ((++) "a")
+                            |> Stream.limit 5
+                            |> Stream.toList
+                in
+                    Expect.equalLists expected actual
+        , test "cycle fizz" <|
+            \() ->
+                let
+                    expected =
+                        [ "", "", "Fizz", "", "", "Fizz" ]
+
+                    actual =
+                        Stream.fromList [ "", "", "Fizz" ]
+                            |> Stream.cycle
+                            |> Stream.limit 6
+                            |> Stream.toList
+                in
+                    Expect.equalLists expected actual
+        , test "cycle of an empty stream is just an empty list" <|
+            \() ->
+                let
+                    expected =
+                        []
+
+                    actual =
+                        Stream.empty
+                            |> Stream.cycle
+                            |> Stream.limit 6
                             |> Stream.toList
                 in
                     Expect.equalLists expected actual

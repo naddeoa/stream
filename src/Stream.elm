@@ -18,6 +18,8 @@ module Stream
         , range
         , singleton
         , isEmpty
+        , iterate
+        , cycle
         )
 
 {-| A `Stream` is kind of like a stream in Java 8 and kind of like a lazy list. It is a
@@ -78,7 +80,7 @@ that have been collected.
 @docs next, nextN, toList
 
 # Creating streams
-@docs fromList, value, singleton, range
+@docs fromList, value, singleton, range, iterate, cycle
 
 # Special streams
 @docs fibonocci, naturalNumbers, empty
@@ -102,6 +104,7 @@ type Stream a b
     | TakeWhileStream (b -> Bool) (Stream a b)
     | DropWhileStream (b -> Bool) (Stream a b)
     | ReducedStream (b -> b -> b) b (Stream a b)
+    | CycleStream (Stream a b) (Stream a b)
     | Empty
 
 
@@ -331,6 +334,18 @@ next stream =
                         in
                             ( ReducedStream reducer reducedValue nextStream, Just reducedValue )
 
+        CycleStream originalStream currentStream ->
+            let
+                ( nextStream, nextValue ) =
+                    next currentStream
+            in
+                case nextValue of
+                    Nothing ->
+                        next (CycleStream originalStream originalStream)
+
+                    Just b ->
+                        ( CycleStream originalStream nextStream, Just b )
+
 
 {-| Like `next`, but it retuns a `List` of values instead of a `Maybe` of a single value.
 If you ask for more values than are in the list then you get whatever is in the list. In general,
@@ -449,6 +464,36 @@ range : Int -> Int -> Int -> Stream a Int
 range start stop step =
     Stream (Source.iterate start ((+) step))
         |> takeWhile (\n -> n <= (Basics.max start stop))
+
+
+{-| Create an infinite stream that iterates a function over a seed.
+
+    -- [ "a", "aa", "aaa", "aaaa", "aaaaa" ]
+    someAs =
+        Stream.iterate "a" ((++) "a")
+            |> Stream.limit 5
+            |> Stream.toList
+-}
+iterate : b -> (b -> b) -> Stream a b
+iterate seed fn =
+    Stream (Source.iterate seed fn)
+
+
+{-| Create an infinite stream that cycles through values of another stream.
+
+    -- [ "", "", "Fizz", "", "", "Fizz" ]
+    fizzes =
+        Stream.fromList [ "", "", "Fizz" ]
+            |> Stream.cycle
+            |> Stream.limit 6
+            |> Stream.toList
+-}
+cycle : Stream a b -> Stream a b
+cycle stream =
+    if isEmpty stream then
+        empty
+    else
+        CycleStream stream stream
 
 
 {-| Create a stream of size 1 that contains a single value.
