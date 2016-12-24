@@ -7,6 +7,8 @@ module Stream
         , fromList
         , limit
         , map
+        , map2
+        , zip
         , next
         , nextN
         , reduce
@@ -74,7 +76,7 @@ that have been collected.
 @docs Stream
 
 # Operations on streams
-@docs limit, map, reduce, filter, takeWhile, dropWhile, isEmpty
+@docs limit, reduce, filter, takeWhile, dropWhile, isEmpty, map, map2, fibonocci, zip
 
 # Getting things out of streams
 @docs next, nextN, toList
@@ -83,10 +85,11 @@ that have been collected.
 @docs fromList, value, singleton, range, iterate, cycle
 
 # Special streams
-@docs fibonocci, naturalNumbers, empty
+@docs naturalNumbers, empty
 -}
 
 import Stream.Source as Source exposing (Source)
+import Lazy exposing (Lazy, lazy, force)
 
 
 {-| Main type that represents a stream.
@@ -95,16 +98,16 @@ they can be thought of as collections of type `b`. Some streams are infinite and
 pre-existing collections of data.
 
 -}
-type Stream a b
+type Stream b
     = Stream (Source b)
-    | MappedStream (a -> b) (Stream a a)
-    | LimitedStream Int (Stream a b)
+    | MappedStream b (Lazy (Stream b))
+    | LimitedStream Int (Stream b)
     | ListStream (List b)
-    | FilteredStream (b -> Bool) (Stream a b)
-    | TakeWhileStream (b -> Bool) (Stream a b)
-    | DropWhileStream (b -> Bool) (Stream a b)
-    | ReducedStream (b -> b -> b) b (Stream a b)
-    | CycleStream (Stream a b) (Stream a b)
+    | FilteredStream (b -> Bool) (Stream b)
+    | TakeWhileStream (b -> Bool) (Stream b)
+    | DropWhileStream (b -> Bool) (Stream b)
+    | ReducedStream (b -> b -> b) b (Stream b)
+    | CycleStream (Stream b) (Stream b)
     | Empty
 
 
@@ -112,7 +115,7 @@ type Stream a b
 return nothing and calling toList will return an empty list. This
 is useful for building upon.
 -}
-empty : Stream a b
+empty : Stream b
 empty =
     Empty
 
@@ -130,9 +133,61 @@ empty =
             |> Stream.map (* 2)
             |> Stream.toList
 -}
-map : (a -> b) -> Stream a a -> Stream a b
+map : (a -> b) -> Stream a -> Stream b
 map f stream =
-    MappedStream f stream
+    let
+        ( nextStream, nextValue ) =
+            next stream
+    in
+        case nextValue of
+            Nothing ->
+                Empty
+
+            Just a ->
+                MappedStream (f a) (lazy (\() -> map f nextStream))
+
+
+{-| Like `map`, but for two streams instead of one.
+
+    -- [ "1a", "2a", "3a", "4a", "5a" ]
+    actual =
+        Stream.value "a"
+            |> Stream.map2 (\a b -> toString a ++ b) (Stream.range 1 5 1)
+            |> Stream.toList
+-}
+map2 : (a -> b -> c) -> Stream a -> Stream b -> Stream c
+map2 f stream1 stream2 =
+    let
+        ( nextStream1, nextValue1 ) =
+            next stream1
+
+        ( nextStream2, nextValue2 ) =
+            next stream2
+    in
+        case nextValue1 of
+            Nothing ->
+                Empty
+
+            Just a ->
+                case nextValue2 of
+                    Nothing ->
+                        Empty
+
+                    Just b ->
+                        MappedStream (f a b) (lazy (\() -> map2 f nextStream1 nextStream2))
+
+
+{-| Zip two streams together.
+
+    -- [ ( 1, "a" ), ( 2, "a" ), ( 3, "a" ), ( 4, "a" ), ( 5, "a" ) ]
+    zippedStream =
+        Stream.value "a"
+            |> Stream.zip (Stream.range 1 5 1)
+            |> Stream.toList
+-}
+zip : Stream a -> Stream b -> Stream ( a, b )
+zip stream1 stream2 =
+    map2 (,) stream1 stream2
 
 
 {-| Limit the size of a stream.
@@ -145,7 +200,7 @@ for an infinite stream.
             |> Stream.limit 10
             |> Stream.toList
 -}
-limit : Int -> Stream a b -> Stream a b
+limit : Int -> Stream b -> Stream b
 limit n stream =
     LimitedStream n stream
 
@@ -162,7 +217,7 @@ running forever when you finally try to turn it into a list.
             |> Stream.filter (\n -> n % 2 == 0)
             |> Stream.toList
 -}
-filter : (b -> Bool) -> Stream a b -> Stream a b
+filter : (b -> Bool) -> Stream b -> Stream b
 filter predicate stream =
     FilteredStream predicate stream
 
@@ -174,7 +229,7 @@ filter predicate stream =
             |> Stream.takeWhile (\n -> n < 10)
             |> Stream.toList
 -}
-takeWhile : (b -> Bool) -> Stream a b -> Stream a b
+takeWhile : (b -> Bool) -> Stream b -> Stream b
 takeWhile predicate stream =
     TakeWhileStream predicate stream
 
@@ -188,7 +243,7 @@ takeWhile predicate stream =
             |> Stream.limit 10
             |> Stream.toList
 -}
-dropWhile : (b -> Bool) -> Stream a b -> Stream a b
+dropWhile : (b -> Bool) -> Stream b -> Stream b
 dropWhile predicate stream =
     DropWhileStream predicate stream
 
@@ -204,7 +259,7 @@ This stream will always have a size of one. It is the result of a reduction on i
             |> Stream.toList
 
 -}
-reduce : (b -> b -> b) -> b -> Stream a b -> Stream a b
+reduce : (b -> b -> b) -> b -> Stream b -> Stream b
 reduce reducer seed stream =
     ReducedStream reducer seed stream
 
@@ -219,7 +274,7 @@ is `Nothing` then the stream is empty.
             |> Stream.next
             |> Tuple.second
 -}
-next : Stream a b -> ( Stream a b, Maybe b )
+next : Stream b -> ( Stream b, Maybe b )
 next stream =
     case stream of
         Empty ->
@@ -232,17 +287,8 @@ next stream =
             in
                 ( Stream nextSource, Just <| Source.current source )
 
-        MappedStream f baseStream ->
-            let
-                ( nextStream, nextValue ) =
-                    next baseStream
-            in
-                case nextValue of
-                    Nothing ->
-                        ( MappedStream f nextStream, Nothing )
-
-                    Just b ->
-                        ( MappedStream f nextStream, Just <| f b )
+        MappedStream value lazy ->
+            ( force lazy, Just value )
 
         LimitedStream n baseStream ->
             let
@@ -358,12 +404,12 @@ you might get less.
             |> Stream.nextN 10
             |> Tuple.second
 -}
-nextN : Int -> Stream a b -> ( Stream a b, List b )
+nextN : Int -> Stream b -> ( Stream b, List b )
 nextN n stream =
     nextNHelper n stream []
 
 
-nextNHelper : Int -> Stream a b -> List b -> ( Stream a b, List b )
+nextNHelper : Int -> Stream b -> List b -> ( Stream b, List b )
 nextNHelper n stream acc =
     case n <= 0 of
         True ->
@@ -404,7 +450,7 @@ nextNHelper n stream acc =
             |> Stream.limit 3
             |> Stream.toList
 -}
-naturalNumbers : Stream a Int
+naturalNumbers : Stream Int
 naturalNumbers =
     Stream Source.naturalNumbers
 
@@ -417,7 +463,7 @@ naturalNumbers =
             |> Stream.limit 8
             |> Stream.toList
 -}
-fibonocci : Stream ( Int, Int ) Int
+fibonocci : Stream Int
 fibonocci =
     map Tuple.first <| Stream (Source.fibonocci)
 
@@ -435,7 +481,7 @@ call `limit` on them or anything like you would on an infinite stream.
         Stream.fromList [ 1, 2, 3 ]
             |> Stream.toList
 -}
-fromList : List b -> Stream a b
+fromList : List b -> Stream b
 fromList list =
     ListStream list
 
@@ -446,7 +492,7 @@ fromList list =
     bunchOfA =
         Stream.value 'a'
 -}
-value : b -> Stream a b
+value : b -> Stream b
 value b =
     Stream (Source.value b)
 
@@ -460,7 +506,7 @@ start then the start value is used in its place.
         Stream.range 1 11 2
             |> Stream.toList
 -}
-range : Int -> Int -> Int -> Stream a Int
+range : Int -> Int -> Int -> Stream Int
 range start stop step =
     Stream (Source.iterate start ((+) step))
         |> takeWhile (\n -> n <= (Basics.max start stop))
@@ -474,7 +520,7 @@ range start stop step =
             |> Stream.limit 5
             |> Stream.toList
 -}
-iterate : b -> (b -> b) -> Stream a b
+iterate : b -> (b -> b) -> Stream b
 iterate seed fn =
     Stream (Source.iterate seed fn)
 
@@ -488,7 +534,7 @@ iterate seed fn =
             |> Stream.limit 6
             |> Stream.toList
 -}
-cycle : Stream a b -> Stream a b
+cycle : Stream b -> Stream b
 cycle stream =
     if isEmpty stream then
         empty
@@ -503,7 +549,7 @@ cycle stream =
         Stream.singleton 'a'
             |> Stream.toList
 -}
-singleton : b -> Stream a b
+singleton : b -> Stream b
 singleton b =
     fromList [ b ]
 
@@ -522,13 +568,13 @@ anything, it will just run forever.
         Stream.fromList [ 1, 2, 3 ]
             |> Stream.toList
 -}
-toList : Stream a b -> List b
+toList : Stream b -> List b
 toList stream =
     toListHelper stream []
         |> Tuple.second
 
 
-toListHelper : Stream a b -> List b -> ( Stream a b, List b )
+toListHelper : Stream b -> List b -> ( Stream b, List b )
 toListHelper stream acc =
     let
         ( nextStream, nextValue ) =
@@ -551,7 +597,7 @@ toListHelper stream acc =
 The check is determined by whether or not the next value out of the stream
 is `Nothing`
 -}
-isEmpty : Stream a b -> Bool
+isEmpty : Stream b -> Bool
 isEmpty stream =
     case Tuple.second <| next stream of
         Nothing ->

@@ -46,17 +46,28 @@ all =
                         List.map (\n -> n * 2) <| List.range 1 100
                 in
                     Expect.equalLists expected actual
-        , test "map to a different type" <|
+        , test "map2" <|
             \() ->
                 let
                     actual =
-                        Stream.naturalNumbers
-                            |> Stream.limit 5
-                            |> Stream.map toString
+                        Stream.value "a"
+                            |> Stream.map2 (\a b -> toString a ++ b) (Stream.range 1 5 1)
                             |> Stream.toList
 
                     expected =
-                        [ "1", "2", "3", "4", "5" ]
+                        [ "1a", "2a", "3a", "4a", "5a" ]
+                in
+                    Expect.equalLists expected actual
+        , test "zip" <|
+            \() ->
+                let
+                    actual =
+                        Stream.value "a"
+                            |> Stream.zip (Stream.range 1 5 1)
+                            |> Stream.toList
+
+                    expected =
+                        [ ( 1, "a" ), ( 2, "a" ), ( 3, "a" ), ( 4, "a" ), ( 5, "a" ) ]
                 in
                     Expect.equalLists expected actual
         , test "toList" <|
