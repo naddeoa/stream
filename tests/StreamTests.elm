@@ -230,6 +230,17 @@ all =
                             |> Stream.toList
                 in
                     Expect.equalLists expected actual
+        , test "descending range" <|
+            \() ->
+                let
+                    expected =
+                        [ 5, 4, 3, 2, 1, 0 ]
+
+                    actual =
+                        Stream.range 5 0 1
+                            |> Stream.toList
+                in
+                    Expect.equalLists expected actual
         , test "start and stop are equal" <|
             \() ->
                 let
@@ -238,17 +249,6 @@ all =
 
                     actual =
                         Stream.range 1 1 1
-                            |> Stream.toList
-                in
-                    Expect.equalLists expected actual
-        , test "stop is less than start" <|
-            \() ->
-                let
-                    expected =
-                        [ 10 ]
-
-                    actual =
-                        Stream.range 10 1 1
                             |> Stream.toList
                 in
                     Expect.equalLists expected actual

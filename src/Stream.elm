@@ -508,8 +508,12 @@ start then the start value is used in its place.
 -}
 range : Int -> Int -> Int -> Stream Int
 range start stop step =
-    Stream (Source.iterate start ((+) step))
-        |> takeWhile (\n -> n <= (Basics.max start stop))
+    if start <= stop then
+        Stream (Source.iterate start ((+) step))
+            |> takeWhile (\n -> n <= stop)
+    else
+        Stream (Source.iterate start (\n -> n - 1))
+            |> takeWhile (\n -> n >= stop)
 
 
 {-| Create an infinite stream that iterates a function over a seed.
