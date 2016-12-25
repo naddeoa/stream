@@ -230,6 +230,30 @@ all =
                             |> Stream.toList
                 in
                     Expect.equalLists expected actual
+        , test "filter" <|
+            \() ->
+                let
+                    expected =
+                        [ 1, 2, 3, 4 ]
+
+                    actual =
+                        Stream.range 1 10 1
+                            |> Stream.filter (\n -> n < 5)
+                            |> Stream.toList
+                in
+                    Expect.equalLists expected actual
+        , test "drop" <|
+            \() ->
+                let
+                    expected =
+                        [ 1, 2, 3, 4 ]
+
+                    actual =
+                        Stream.range 1 10 1
+                            |> Stream.drop (\n -> n >= 5)
+                            |> Stream.toList
+                in
+                    Expect.equalLists expected actual
         , test "descending range" <|
             \() ->
                 let

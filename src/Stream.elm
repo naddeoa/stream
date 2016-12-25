@@ -2,6 +2,7 @@ module Stream
     exposing
         ( Stream
         , filter
+        , drop
         , takeWhile
         , dropWhile
         , fromList
@@ -76,7 +77,7 @@ that have been collected.
 @docs Stream
 
 # Operations on streams
-@docs limit, reduce, filter, takeWhile, dropWhile, isEmpty, map, map2, fibonocci, zip
+@docs limit, reduce, filter, drop, takeWhile, dropWhile, isEmpty, map, map2, fibonocci, zip
 
 # Getting things out of streams
 @docs next, nextN, toList
@@ -220,6 +221,19 @@ running forever when you finally try to turn it into a list.
 filter : (b -> Bool) -> Stream b -> Stream b
 filter predicate stream =
     FilteredStream predicate stream
+
+
+{-| Like filter, but items that match the predicate are dropped instead of kept.
+
+    -- [ 1, 2, 3, 4 ]
+    actual =
+        Stream.range 1 10 1
+            |> Stream.drop (\n -> n >= 5)
+            |> Stream.toList
+-}
+drop : (b -> Bool) -> Stream b -> Stream b
+drop predicate stream =
+    FilteredStream (\b -> not (predicate b)) stream
 
 
 {-| Take items from a stream while a predicate is true.
