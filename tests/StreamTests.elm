@@ -288,6 +288,39 @@ all =
                             |> Stream.toList
                 in
                     Expect.equalLists expected actual
+        , test "concat" <|
+            \() ->
+                let
+                    expected =
+                        [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 ]
+
+                    actual =
+                        Stream.concat (Stream.range 0 4 1) (Stream.range 5 10 1)
+                            |> Stream.toList
+                in
+                    Expect.equalLists expected actual
+        , test "concat one empty stream" <|
+            \() ->
+                let
+                    expected =
+                        [ 5, 6, 7, 8, 9, 10 ]
+
+                    actual =
+                        Stream.concat Stream.empty (Stream.range 5 10 1)
+                            |> Stream.toList
+                in
+                    Expect.equalLists expected actual
+        , test "concat two empty streams" <|
+            \() ->
+                let
+                    expected =
+                        []
+
+                    actual =
+                        Stream.concat Stream.empty Stream.empty
+                            |> Stream.toList
+                in
+                    Expect.equalLists expected actual
         , test "cycle fizz" <|
             \() ->
                 let

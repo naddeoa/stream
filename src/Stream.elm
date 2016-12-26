@@ -7,6 +7,7 @@ module Stream
         , dropWhile
         , fromList
         , limit
+        , concat
         , map
         , map2
         , zip
@@ -83,7 +84,7 @@ that have been collected.
 @docs next, nextN, toList
 
 # Creating streams
-@docs fromList, value, singleton, range, iterate, cycle
+@docs fromList, value, singleton, range, iterate, cycle, concat
 
 # Special streams
 @docs naturalNumbers, empty
@@ -109,6 +110,7 @@ type Stream b
     | DropWhileStream (b -> Bool) (Stream b)
     | ReducedStream (b -> b -> b) b (Stream b)
     | CycleStream (Stream b) (Stream b)
+    | ConcatStream (Stream b) (Stream b)
     | Empty
 
 
@@ -204,6 +206,18 @@ for an infinite stream.
 limit : Int -> Stream b -> Stream b
 limit n stream =
     LimitedStream n stream
+
+
+{-| Concatonate two streams together.
+
+    -- [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 ]
+    combinedStream =
+        Stream.concat (Stream.range 0 4 1) (Stream.range 5 10 1)
+            |> Stream.toList
+-}
+concat : Stream a -> Stream a -> Stream a
+concat stream1 stream2 =
+    ConcatStream stream1 stream2
 
 
 {-| Filter values from a stream.
@@ -405,6 +419,18 @@ next stream =
 
                     Just b ->
                         ( CycleStream originalStream nextStream, Just b )
+
+        ConcatStream stream1 stream2 ->
+            let
+                ( nextStream, nextValue ) =
+                    next stream1
+            in
+                case nextValue of
+                    Nothing ->
+                        next stream2
+
+                    Just b ->
+                        ( ConcatStream nextStream stream2, Just b )
 
 
 {-| Like `next`, but it retuns a `List` of values instead of a `Maybe` of a single value.
