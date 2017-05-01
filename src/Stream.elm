@@ -1,6 +1,7 @@
 module Stream
     exposing
         ( Stream
+        , StreamResult(..)
         , filter
         , drop
         , takeWhile
@@ -12,7 +13,9 @@ module Stream
         , map2
         , zip
         , next
+        , deferNext
         , nextN
+        , deferNextN
         , reduce
         , toList
         , fibonocci
@@ -24,6 +27,7 @@ module Stream
         , isEmpty
         , iterate
         , cycle
+        , every
         )
 
 {-| A `Stream` is kind of like a stream in Java 8 and kind of like a lazy list. It is a
@@ -88,10 +92,16 @@ that have been collected.
 
 # Special streams
 @docs naturalNumbers, empty
+
+# Async stream stuff
+@docs StreamResult, deferNext, deferNextN, every
 -}
 
 import Stream.Source as Source exposing (Source)
 import Lazy exposing (Lazy, lazy, force)
+import Task
+import Process
+import Time exposing (Time)
 
 
 {-| Main type that represents a stream.
@@ -125,6 +135,94 @@ empty =
 
 
 --  Functions over Streams
+
+
+{-| The result type of an async operation on streams.
+This example shows what this might look like in the Elm Architecture.
+
+    -- Every time ButtonClicked happens, the model stream is updated
+    -- and the results are stored.
+    update : Msg -> Model -> ( Model, Cmd Msg )
+    update msg model =
+        case msg of
+            SomeTag results ->
+                case results of
+                    Stream.Result nextStream result ->
+                        case result of
+                            Just res ->
+                                ( { model | stream = nextStream, results = [ res ] }, Cmd.none )
+
+                            Nothing ->
+                                ( { model | stream = nextStream, results = [] }, Cmd.none )
+
+                    Stream.Results nextStream results ->
+                        ( { model | stream = nextStream, results = results }, Cmd.none )
+
+            -- On click, send a Cmd that will get the next 10 items out
+            -- of the stream after 1 second.
+            ButtonClicked ->
+                ( model, (Stream.deferNextN 1000 10 model.stream Deferred) )
+
+-}
+type StreamResult a
+    = Result (Stream a) (Maybe a)
+    | Results (Stream a) (List a)
+
+
+{-| Like `nextN`, but instead of returning the result
+it will return a Cmd of the result after some period of time. See `StreamResult`
+for an example.
+-}
+deferNextN : Time -> Int -> Stream a -> (StreamResult a -> msg) -> Cmd msg
+deferNextN milliseconds count stream cmdMapper =
+    let
+        ( nextStream, results ) =
+            nextN count stream
+    in
+        Process.sleep milliseconds
+            |> Task.andThen (\_ -> Task.succeed <| Results nextStream results)
+            |> Task.perform (\a -> a)
+            |> Cmd.map cmdMapper
+
+
+{-| Like `next`, but instead of returning the result
+it will return a Cmd of the result after some period of time. See `StreamResult`
+for an example.
+-}
+deferNext : Time -> Stream a -> (StreamResult a -> msg) -> Cmd msg
+deferNext milliseconds stream cmdMapper =
+    let
+        ( nextStream, maybeResult ) =
+            next stream
+    in
+        Process.sleep milliseconds
+            |> Task.andThen (\_ -> Task.succeed <| Result nextStream maybeResult)
+            |> Task.perform (\a -> a)
+            |> Cmd.map cmdMapper
+
+
+{-| A convenience for creating a subscription on a stream.
+This extends from the example in `StreamResult`.
+
+    -- Example main in the Elm Arcitecture
+    -- Comb
+    subscriptions : Model -> Sub Msg
+    subscriptions model =
+        Stream.every 1000 model.stream SomeTag
+-}
+every : Time.Time -> Stream a -> (StreamResult a -> msg) -> Sub msg
+every milliseconds stream tag =
+    if isEmpty stream then
+        Sub.none
+    else
+        let
+            ( nextStream, maybeValue ) =
+                next stream
+
+            value =
+                Result nextStream maybeValue
+        in
+            Time.every milliseconds (\_ -> tag value)
 
 
 {-| Map a stream from one that returns a type a to one that returns a type b

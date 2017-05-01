@@ -49,3 +49,15 @@ This is obvious to anyone who feels comfortable with functional programming, but
 you're coming from Java 8 then you're aware that you can't reuse streams
 that have been collected.
 
+## Changelog
+### 2.2.0
+Added a bunch of async stuff, inspired from my use of rxjs. See the `Demo.elm`
+file for some examples. You'll have to run `elm install` first to get
+`elm-lang/html` added as a dependency so see it in `elm reactor`. I don't want
+to actually depend on it and elm doesn't currently allow for dev/test
+dependencies.
+
+* StreamResult - container type for async operations
+* deferNext - like the `next` function, but happens after some time
+* deferNextN - like the `nextN` function, but happens after some time
+* every - Subscribe to stream values until the stream is empty

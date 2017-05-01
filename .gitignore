@@ -12,3 +12,8 @@ node_modules
 
 # Desktop Services Store on macOS
 .DS_Store
+
+elm.js
+tests/index.html
+tests/index.js
+
