@@ -98,7 +98,6 @@ that have been collected.
 -}
 
 import Stream.Source as Source exposing (Source)
-import Lazy exposing (Lazy, lazy, force)
 import Task
 import Process
 import Time exposing (Time)
@@ -112,7 +111,7 @@ pre-existing collections of data.
 -}
 type Stream b
     = Stream (Source b)
-    | MappedStream b (Lazy (Stream b))
+    | MappedStream b (() -> Stream b)
     | LimitedStream Int (Stream b)
     | ListStream (List b)
     | FilteredStream (b -> Bool) (Stream b)
@@ -245,7 +244,7 @@ map f stream =
                 Empty
 
             Just a ->
-                MappedStream (f a) (lazy (\() -> map f nextStream))
+                MappedStream (f a) (\() -> map f nextStream)
 
 
 {-| Like `map`, but for two streams instead of one.
@@ -275,7 +274,7 @@ map2 f stream1 stream2 =
                         Empty
 
                     Just b ->
-                        MappedStream (f a b) (lazy (\() -> map2 f nextStream1 nextStream2))
+                        MappedStream (f a b) (\() -> map2 f nextStream1 nextStream2)
 
 
 {-| Zip two streams together.
@@ -414,7 +413,7 @@ next stream =
                 ( Stream nextSource, Just <| Source.current source )
 
         MappedStream value lazy ->
-            ( force lazy, Just value )
+            ( lazy (), Just value )
 
         LimitedStream n baseStream ->
             let

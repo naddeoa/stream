@@ -9,8 +9,8 @@ This library was made because Elm currently doesn't have great options for
 lazyiness. There are a few implementations that exist but they are vulnerable
 to stack overflows. This library uses tail call recursion for collecting
 streams into lists. Also, instead of modeling the streams recursively it uses
-an approach closer to the Elm architecture. The `Lazy` core library is only used for 
-map operations. The deepest stack you will have is equal to the amount of transformations
+an approach closer to the Elm architecture. The `Lazy` core library is not
+used. The deepest stack you will have is equal to the amount of transformations
 you apply on a stream.  For example, in the following snippet:
 
     let
