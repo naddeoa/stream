@@ -1,0 +1,25 @@
+{
+  "name": "elm-stream",
+  "version": "1.0.0",
+  "description": "Elm package: http://package.elm-lang.org/packages/naddeoa/stream/latest",
+  "main": "index.js",
+  "directories": {
+    "test": "tests"
+  },
+  "devDependencies": {
+    "elm-test": "^0.17.3"
+  },
+  "scripts": {
+    "test": "elm-test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/naddeoa/stream.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/naddeoa/stream/issues"
+  },
+  "homepage": "https://github.com/naddeoa/stream#readme"
+}
