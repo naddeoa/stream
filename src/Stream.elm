@@ -28,6 +28,7 @@ module Stream
         , iterate
         , cycle
         , every
+        , flatten
         )
 
 {-| A `Stream` is kind of like a stream in Java 8 and kind of like a lazy list. It is a
@@ -82,7 +83,7 @@ that have been collected.
 @docs Stream
 
 # Operations on streams
-@docs limit, reduce, filter, drop, takeWhile, dropWhile, isEmpty, map, map2, fibonocci, zip
+@docs limit, reduce, filter, drop, takeWhile, dropWhile, isEmpty, map, map2, fibonocci, zip, flatten
 
 # Getting things out of streams
 @docs next, nextN, toList
@@ -120,6 +121,7 @@ type Stream b
     | ReducedStream (b -> b -> b) b (Stream b)
     | CycleStream (Stream b) (Stream b)
     | ConcatStream (Stream b) (Stream b)
+    | FlattenStream ( Stream (Stream b), Stream b )
     | Empty
 
 
@@ -315,6 +317,31 @@ limit n stream =
 concat : Stream a -> Stream a -> Stream a
 concat stream1 stream2 =
     ConcatStream stream1 stream2
+
+
+{-| Flatten a stream of streams into a stream.
+
+    -- [ 1, 2, 3, 4, 5 ]
+    nestedStream =
+        Stream.fromList
+            [ Stream.fromList [ 1, 2, 3 ]
+            , Stream.fromList []
+            , Stream.fromList [ 4, 5 ]
+            , Stream.fromList []
+            , Stream.fromList []
+            ]
+
+    flatStream =
+        Stream.flatten nestedStream
+            |> Stream.toList
+-}
+flatten : Stream (Stream a) -> Stream a
+flatten stream =
+    let
+        ( nestedStreams, firstStream ) =
+            next stream
+    in
+        FlattenStream ( nestedStreams, Maybe.withDefault Empty firstStream )
 
 
 {-| Filter values from a stream.
@@ -528,6 +555,27 @@ next stream =
 
                     Just b ->
                         ( ConcatStream nextStream stream2, Just b )
+
+        FlattenStream ( nestedStreams, currentStream ) ->
+            let
+                ( nextStream, nextValue ) =
+                    next currentStream
+            in
+                case nextValue of
+                    Nothing ->
+                        let
+                            ( nextNestedStreams, newCurrentStream ) =
+                                next nestedStreams
+                        in
+                            case newCurrentStream of
+                                Just n ->
+                                    next (FlattenStream ( nextNestedStreams, n ))
+
+                                Nothing ->
+                                    ( Empty, Nothing )
+
+                    Just b ->
+                        ( FlattenStream ( nestedStreams, nextStream ), Just b )
 
 
 {-| Like `next`, but it retuns a `List` of values instead of a `Maybe` of a single value.
