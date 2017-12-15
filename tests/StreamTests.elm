@@ -321,6 +321,26 @@ all =
                             |> Stream.toList
                 in
                     Expect.equalLists expected actual
+        , test "flatten works" <|
+            \() ->
+                let
+                    expected =
+                        [ 1, 2, 3, 4, 5 ]
+
+                    nestedStream =
+                        Stream.fromList
+                            [ Stream.fromList [ 1, 2, 3 ]
+                            , Stream.fromList []
+                            , Stream.fromList [ 4, 5 ]
+                            , Stream.fromList []
+                            , Stream.fromList []
+                            ]
+
+                    actual =
+                        Stream.flatten nestedStream
+                            |> Stream.toList
+                in
+                    Expect.equalLists expected actual
         , test "cycle fizz" <|
             \() ->
                 let
