@@ -50,6 +50,9 @@ you're coming from Java 8 then you're aware that you can't reuse streams
 that have been collected.
 
 ## Changelog
+### 2.3.0
+* flatten - Convert a `Stream (Stream a) -> Stream a`
+
 ### 2.2.0
 Added a bunch of async stuff, inspired from my use of rxjs. See the `Demo.elm`
 file for some examples. You'll have to run `elm install` first to get
