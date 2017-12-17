@@ -341,6 +341,57 @@ all =
                             |> Stream.toList
                 in
                     Expect.equalLists expected actual
+        , test "interleave works" <|
+            \() ->
+                let
+                    expected =
+                        [ 1, 2, 3, 1, 2, 3, 1, 2, 3 ]
+
+                    nestedStream =
+                        [ Stream.fromList [ 1, 1, 1 ]
+                        , Stream.fromList [ 2, 2, 2 ]
+                        , Stream.fromList [ 3, 3, 3 ]
+                        ]
+
+                    actual =
+                        Stream.interleave nestedStream
+                            |> Stream.toList
+                in
+                    Expect.equalLists expected actual
+        , test "interleave exhausts all streams" <|
+            \() ->
+                let
+                    expected =
+                        [ 1, 2, 3, 1, 2, 3, 2, 3, 3 ]
+
+                    nestedStream =
+                        [ Stream.fromList [ 1, 1 ]
+                        , Stream.fromList [ 2, 2, 2 ]
+                        , Stream.fromList [ 3, 3, 3, 3 ]
+                        ]
+
+                    actual =
+                        Stream.interleave nestedStream
+                            |> Stream.toList
+                in
+                    Expect.equalLists expected actual
+        , test "interleave with infinite streams" <|
+            \() ->
+                let
+                    expected =
+                        [ 1, 2, 1, 2, 1, 2, 1, 2, 1, 2 ]
+
+                    nestedStream =
+                        [ Stream.value 1
+                        , Stream.value 2
+                        ]
+
+                    actual =
+                        Stream.interleave nestedStream
+                            |> Stream.limit 10
+                            |> Stream.toList
+                in
+                    Expect.equalLists expected actual
         , test "cycle fizz" <|
             \() ->
                 let
