@@ -29,6 +29,7 @@ module Stream
         , cycle
         , every
         , flatten
+        , interleave
         )
 
 {-| A `Stream` is kind of like a stream in Java 8 and kind of like a lazy list. It is a
@@ -83,7 +84,7 @@ that have been collected.
 @docs Stream
 
 # Operations on streams
-@docs limit, reduce, filter, drop, takeWhile, dropWhile, isEmpty, map, map2, fibonocci, zip, flatten
+@docs limit, reduce, filter, drop, takeWhile, dropWhile, isEmpty, map, map2, fibonocci, zip, flatten, interleave
 
 # Getting things out of streams
 @docs next, nextN, toList
@@ -122,6 +123,7 @@ type Stream b
     | CycleStream (Stream b) (Stream b)
     | ConcatStream (Stream b) (Stream b)
     | FlattenStream ( Stream (Stream b), Stream b )
+    | InterleaveStream ( List (Stream b), Stream b )
     | Empty
 
 
@@ -342,6 +344,26 @@ flatten stream =
             next stream
     in
         FlattenStream ( nestedStreams, Maybe.withDefault Empty firstStream )
+
+
+{-| Interleave multiple streams into a single stream.
+All streams will be exhausted in the process, regardless if they are the
+same length or not.
+
+    -- [ 1, 2, 3, 1, 2, 3, 1, 2, 3 ]
+    nestedStream =
+        [ Stream.fromList [ 1, 1, 1 ]
+        , Stream.fromList [ 2, 2, 2 ]
+        , Stream.fromList [ 3, 3, 3 ]
+        ]
+
+    interleaved =
+        Stream.interleave nestedStream
+            |> Stream.toList
+-}
+interleave : List (Stream a) -> Stream a
+interleave stream =
+    InterleaveStream ( Maybe.withDefault [] (List.tail stream), Maybe.withDefault Empty (List.head stream) )
 
 
 {-| Filter values from a stream.
@@ -576,6 +598,40 @@ next stream =
 
                     Just b ->
                         ( FlattenStream ( nestedStreams, nextStream ), Just b )
+
+        InterleaveStream ( nestedStreams, currentStream ) ->
+            let
+                ( nextStream, nextValue ) =
+                    next currentStream
+            in
+                case nextValue of
+                    Just n ->
+                        ( InterleaveStream <| rotateStreamList nestedStreams nextStream, Just n )
+
+                    Nothing ->
+                        case List.head nestedStreams of
+                            Nothing ->
+                                ( Empty, Nothing )
+
+                            Just nextCurrentStream ->
+                                next (InterleaveStream ( (Maybe.withDefault [] (List.tail nestedStreams)), nextCurrentStream ))
+
+
+{-| Given a list of streams and a specific stream that is considered the head,
+rotate them such that the first element of the list of now the head and the current
+head is now the tail of the list. For example:
+
+    rotateStreamList [2, 3, 4] 1 == ([3, 4, 1], 2)
+    rotateStreamList [] 1 == ([], 1)
+-}
+rotateStreamList : List (Stream a) -> Stream a -> ( List (Stream a), Stream a )
+rotateStreamList nestedStreams headStream =
+    case List.head nestedStreams of
+        Nothing ->
+            ( [], headStream )
+
+        Just nextHeadStream ->
+            ( List.append (Maybe.withDefault [] (List.tail nestedStreams)) [ headStream ], nextHeadStream )
 
 
 {-| Like `next`, but it retuns a `List` of values instead of a `Maybe` of a single value.
