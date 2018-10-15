@@ -109,8 +109,8 @@ will return the next value that you would expect.
         |> Source.current
 -}
 nextSource : Source a -> Source a
-nextSource (Source a next) =
-    Source (next a) next
+nextSource (Source a n) =
+    Source (n a) n 
 
 
 
@@ -121,7 +121,7 @@ nextSource (Source a next) =
 -}
 value : a -> Source a
 value a =
-    Source a (\a -> a)
+    Source a (\arg -> arg)
 
 
 {-| A `Source` that iterates a function over a seed value

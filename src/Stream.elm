@@ -102,7 +102,7 @@ that have been collected.
 import Stream.Source as Source exposing (Source)
 import Task
 import Process
-import Time exposing (Time)
+import Time
 
 
 {-| Main type that represents a stream.
@@ -176,7 +176,7 @@ type StreamResult a
 it will return a Cmd of the result after some period of time. See `StreamResult`
 for an example.
 -}
-deferNextN : Time -> Int -> Stream a -> (StreamResult a -> msg) -> Cmd msg
+deferNextN : Float -> Int -> Stream a -> (StreamResult a -> msg) -> Cmd msg
 deferNextN milliseconds count stream cmdMapper =
     let
         ( nextStream, results ) =
@@ -192,7 +192,7 @@ deferNextN milliseconds count stream cmdMapper =
 it will return a Cmd of the result after some period of time. See `StreamResult`
 for an example.
 -}
-deferNext : Time -> Stream a -> (StreamResult a -> msg) -> Cmd msg
+deferNext : Float -> Stream a -> (StreamResult a -> msg) -> Cmd msg
 deferNext milliseconds stream cmdMapper =
     let
         ( nextStream, maybeResult ) =
@@ -213,7 +213,7 @@ This extends from the example in `StreamResult`.
     subscriptions model =
         Stream.every 1000 model.stream SomeTag
 -}
-every : Time.Time -> Stream a -> (StreamResult a -> msg) -> Sub msg
+every : Float -> Stream a -> (StreamResult a -> msg) -> Sub msg
 every milliseconds stream tag =
     if isEmpty stream then
         Sub.none
@@ -222,10 +222,10 @@ every milliseconds stream tag =
             ( nextStream, maybeValue ) =
                 next stream
 
-            value =
+            val =
                 Result nextStream maybeValue
         in
-            Time.every milliseconds (\_ -> tag value)
+            Time.every milliseconds (\_ -> tag val)
 
 
 {-| Map a stream from one that returns a type a to one that returns a type b
@@ -291,7 +291,7 @@ map2 f stream1 stream2 =
 -}
 zip : Stream a -> Stream b -> Stream ( a, b )
 zip stream1 stream2 =
-    map2 (,) stream1 stream2
+    map2 (\a b -> (a, b)) stream1 stream2
 
 
 {-| Limit the size of a stream.
@@ -461,8 +461,8 @@ next stream =
             in
                 ( Stream nextSource, Just <| Source.current source )
 
-        MappedStream value lazy ->
-            ( lazy (), Just value )
+        MappedStream val lazy ->
+            ( lazy (), Just val)
 
         LimitedStream n baseStream ->
             let
